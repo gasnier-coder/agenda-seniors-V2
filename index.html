@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <title>Agenda Seniors</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      height: 100%;
+      background: #000;
+      color: #00FF66;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 17px;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      padding-bottom: 0;
+      height: 100%;
+    }
+
+    .entete {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo-placeholder {
+      width: 160px;
+      height: 65px;
+      border: 2px dashed #00FF66;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 0.8rem;
+      text-align: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .logo-placeholder img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .titres {
+      flex: 1;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: #00FF66;
+      margin-bottom: 3px;
+    }
+
+    #titre-semaine {
+      font-size: 1.1rem;
+      color: #FF3333;
+      font-weight: bold;
+    }
+
+    .jours-wrapper {
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 8px;
+    }
+
+    .jours {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      height: 100%;
+    }
+
+    .jour {
+      background: #0a0a0a;
+      border: 2px solid #00FF66;
+      border-radius: 10px;
+      padding: 8px 4px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .jour.aujourd-hui {
+      border-color: #FF3333;
+      border-width: 3px;
+    }
+
+    .date-jour {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #00FF66;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #003311;
+      text-align: center;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+
+    .rdv {
+      margin: 10px 0;
+      padding: 3px;
+    }
+
+    .rdv-ligne1 {
+      font-size: 0.95rem;
+      color: #FFFFFF;
+      font-weight: bold;
+      line-height: 1.25;
+    }
+
+    .heure {
+      color: #FF3333;
+      font-weight: bold;
+    }
+
+    .rdv-ligne2 {
+      font-size: 0.85rem;
+      color: #FFFFFF;
+      margin-top: 2px;
+      opacity: 0.9;
+    }
+
+    .rdv-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 5px;
+    }
+
+    .rdv-actions button {
+      flex: 1;
+      padding: 4px 2px;
+      font-size: 0.75rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-modif { background: #00AA44; color: #000; }
+    .btn-suppr { background: #FF3333; color: #fff; }
+
+    .aucun {
+      color: #555;
+      font-style: italic;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .barre-bas {
+      flex-shrink: 0;
+      background: #000;
+      padding: 10px 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-top: 2px solid #003311;
+    }
+
+    .barre-bas button {
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-nav {
+      background: #111;
+      border: 3px solid #00FF66 !important;
+      color: #00FF66;
+      font-size: 1.5rem;
+      height: 50px;
+      flex: 1;
+      max-width: 130px;
+    }
+
+    .btn-ajouter {
+      background: #FF3333;
+      color: #fff;
+      font-size: 2rem;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(255, 50, 50, 0.5);
+      flex-shrink: 0;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 100;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .modal.actif { display: block; }
+
+    .modal-contenu {
+      max-width: 460px;
+      margin: 20px auto;
+      background: #0a0a0a;
+      border: 3px solid #AAAAAA;
+      border-radius: 18px;
+      padding: 24px;
+    }
+
+    .modal h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 1.7rem;
+      color: #00FF66;
+    }
+
+    label {
+      display: block;
+      margin: 16px 0 6px;
+      font-size: 1.25rem;
+      color: #7CFFB2;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.3rem;
+      background: #111;
+      border: 2px solid #AAAAAA;
+      border-radius: 10px;
+      color: #00FF66;
+    }
+
+    .boutons-modal {
+      display: flex;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .boutons-modal button {
+      flex: 1;
+      padding: 16px;
+      font-size: 1.4rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-vert { background: #00CC55; color: #000; }
+    .btn-rouge { background: #FF3333; color: white; }
+
+    #status {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #7CFFB2;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="entete">
+    <div class="logo-placeholder" id="logo-zone">
+      <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    </div>
+    <div class="titres">
+      <h1>Agenda Seniors</h1>
+      <div id="titre-semaine">Semaine</div>
+      <div id="status">Connexion...</div>
+    </div>
+  </div>
+
+  <div class="jours-wrapper">
+    <div class="jours" id="liste-jours"></div>
+  </div>
+
+  <div class="barre-bas">
+    <button class="btn-nav" id="btn-prev">←</button>
+    <button class="btn-ajouter" id="btn-ajouter">+</button>
+    <button class="btn-nav" id="btn-next">→</button>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-contenu">
+      <h2 id="modal-titre">Nouveau rendez-vous</h2>
+      <label>Date</label>
+      <input type="date" id="input-date">
+      <label>Heure (ex: 14h30)</label>
+      <input type="text" id="input-heure" placeholder="14h30" maxlength="12">
+      <label>Titre (ligne 1)</label>
+      <input type="text" id="input-titre" placeholder="Qui ?" maxlength="40">
+      <label>Détail (ligne 2)</label>
+      <input type="text" id="input-detail" placeholder="Quoi ?" maxlength="50">
+      <div class="boutons-modal">
+        <button class="btn-rouge" id="btn-annuler">Annuler</button>
+        <button class="btn-vert" id="btn-sauver">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // ===== FIREBASE CONFIG =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBtWwUH2nM91mi_pfFhOnBGHNiP-SjIPJc",
+    authDomain: "agenda-seniors.firebaseapp.com",
+    databaseURL: "https://agenda-seniors-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "agenda-seniors",
+    storageBucket: "agenda-seniors.firebasestorage.app",
+    messagingSenderId: "791269761065",
+    appId: "1:791269761065:web:70635596630ad40ca23c38"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const rdvsRef = db.ref('rdvs');
+
+  // ===== VARIABLES =====
+  let rdv = [];
+  let dateCourante = new Date();
+  let rdvEnCours = null;
+
+  const moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+  function pad(n) { return n < 10 ? '0' + n : n; }
+  function dateToKey(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function formatDateCourte(d) {
+    const j = ['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'][d.getDay()];
+    return j + ' ' + d.getDate();
+  }
+  function getLundi(d) {
+    const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const jour = date.getDay();
+    const diff = (jour === 0) ? -6 : 1 - jour;
+    date.setDate(date.getDate() + diff);
+    return date;
+  }
+
+  // ===== SYNCHRONISATION TEMPS RÉEL =====
+  rdvsRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    rdv = data ? Object.values(data) : [];
+    document.getElementById('status').textContent = 'Synchronisé';
+    afficherSemaine();
+  });
+
+  function sauvegarder() {
+    // On envoie tout le tableau sous forme d'objet
+    const obj = {};
+    rdv.forEach(r => {
+      obj[r.id] = r;
+    });
+    rdvsRef.set(obj);
+  }
+
+  function afficherSemaine() {
+    const lundi = getLundi(dateCourante);
+    const dimanche = new Date(lundi);
+    dimanche.setDate(lundi.getDate() + 6);
+
+    document.getElementById('titre-semaine').textContent =
+      lundi.getDate() + ' ' + moisFr[lundi.getMonth()] + ' → ' +
+      dimanche.getDate() + ' ' + moisFr[dimanche.getMonth()];
+
+    const conteneur = document.getElementById('liste-jours');
+    conteneur.innerHTML = '';
+
+    const aujourdhuiKey = dateToKey(new Date());
+
+    for (let i = 0; i < 7; i++) {
+      const jour = new Date(lundi);
+      jour.setDate(lundi.getDate() + i);
+      const key = dateToKey(jour);
+
+      const rdvsDuJour = rdv
+        .filter(r => r.date === key)
+        .sort((a, b) => (a.heure || '').localeCompare(b.heure || ''));
+
+      const div = document.createElement('div');
+      div.className = 'jour' + (key === aujourdhuiKey ? ' aujourd-hui' : '');
+
+      let html = '<div class="date-jour">' + formatDateCourte(jour) + '</div>';
+
+      if (rdvsDuJour.length === 0) {
+        html += '<div class="aucun">–</div>';
+      } else {
+        rdvsDuJour.forEach(function(r) {
+          html += `
+            <div class="rdv">
+              <div class="rdv-ligne1">
+                <span class="heure">${r.heure || ''}</span><br>
+                ${r.titre || ''}
+              </div>
+              <div class="rdv-ligne2">${r.detail || ''}</div>
+              <div class="rdv-actions">
+                <button class="btn-modif" onclick="modifierRdv(${r.id})">Modifier</button>
+                <button class="btn-suppr" onclick="supprimerRdv(${r.id})">Supprimer</button>
+              </div>
+            </div>`;
+        });
+      }
+
+      div.innerHTML = html;
+      conteneur.appendChild(div);
+    }
+  }
+
+  window.modifierRdv = function(id) {
+    const item = rdv.find(r => r.id === id);
+    if (!item) return;
+    rdvEnCours = item;
+    document.getElementById('modal-titre').textContent = 'Modifier le rendez-vous';
+    document.getElementById('input-date').value = item.date;
+    document.getElementById('input-heure').value = item.heure || '';
+    document.getElementById('input-titre').value = item.titre || '';
+    document.getElementById('input-detail').value = item.detail || '';
+    document.getElementById('modal').classList.add('actif');
+  };
+
+  window.supprimerRdv = function(id) {
+    if (confirm('Voulez-vous vraiment supprimer ce rendez-vous ?')) {
+      rdv = rdv.filter(r => r.id !== id);
+      sauvegarder();
+    }
+  };
+
+  document.getElementById('btn-prev').onclick = () => {
+    dateCourante.setDate(dateCourante.getDate() - 7);
+    afficherSemaine();
+  };
+
+  document.getElementById('btn-next').onclick = () => {
+    dateCourante.setDate(dateCourante.getDate() + 7);
+    afficherSemaine();
+  };
+
+  document.getElementById('btn-ajouter').onclick = () => {
+    rdvEnCours = null;
+    document.getElementById('modal-titre').textContent = 'Nouveau rendez-vous';
+    document.getElementById('input-date').value = dateToKey(new Date());
+    document.getElementById('input-heure').value = '';
+    document.getElementById('input-titre').value = '';
+    document.getElementById('input-detail').value = '';
+    document.getElementById('modal').classList.add('actif');
+  };
+
+  document.getElementById('btn-annuler').onclick = () => {
+    document.getElementById('modal').classList.remove('actif');
+    rdvEnCours = null;
+  };
+
+  document.getElementById('btn-sauver').onclick = () => {
+    const date = document.getElementById('input-date').value;
+    const heure = document.getElementById('input-heure').value.trim();
+    const titre = document.getElementById('input-titre').value.trim();
+    const detail = document.getElementById('input-detail').value.trim();
+
+    if (!date || !titre) {
+      alert('La date et le titre sont obligatoires');
+      return;
+    }
+
+    if (rdvEnCours) {
+      rdvEnCours.date = date;
+      rdvEnCours.heure = heure;
+      rdvEnCours.titre = titre;
+      rdvEnCours.detail = detail;
+    } else {
+      rdv.push({
+        id: Date.now(),
+        date: date,
+        heure: heure,
+        titre: titre,
+        detail: detail
+      });
+    }
+
+    sauvegarder();
+    document.getElementById('modal').classList.remove('actif');
+    rdvEnCours = null;
+  };
+
+  // Service Worker pour PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(console.log);
+  }
+
+  // Affichage initial
+  afficherSemaine();
+</script>
+</body>
+</html>
