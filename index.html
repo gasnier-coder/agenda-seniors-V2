@@ -1,519 +1,702 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon-192.png">
-  <title>Agenda Seniors</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Seniors - Vue Semaine</title>
+    <!-- Liens PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <style>
+        :root {
+            --bg-color: #000000; /* Noir pur */
+            --card-bg: #121212;
+            --text-main: #ffffff;
+            --accent-green: #00ff87;
+            --accent-red: #C92808; /* Ton rouge exact */
+            --accent-blue: #00d2ff;
+            --text-sub: #b0b0b0;
+        }
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    html, body {
-      height: 100%;
-      background: #000;
-      color: #00FF66;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 17px;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      padding-bottom: 0;
-      height: 100%;
-    }
+        /* Bloque le scroll global & Zéro marge en haut */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            padding: 0 15px 15px 15px;
+        }
 
-    .entete {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-      flex-shrink: 0;
-    }
+        /* En-tête collé en haut avec grand logo */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--accent-red);
+            padding: 5px 0 10px 0;
+            margin-bottom: 12px;
+            height: 115px;
+            flex-shrink: 0;
+        }
 
-    .logo-placeholder {
-      width: 160px;
-      height: 65px;
-      border: 2px dashed #00FF66;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #555;
-      font-size: 0.8rem;
-      text-align: center;
-      flex-shrink: 0;
-      overflow: hidden;
-      background: #111;
-    }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
 
-    .logo-placeholder img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+        /* Logo */
+        .logo-container {
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .titres {
-      flex: 1;
-      text-align: center;
-    }
+        .logo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
 
-    h1 {
-      font-size: 1.6rem;
-      color: #00FF66;
-      margin-bottom: 3px;
-    }
+        /* Titre de la semaine en rouge */
+        .header-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--accent-red);
+            text-transform: capitalize;
+            letter-spacing: 0.5px;
+        }
 
-    #titre-semaine {
-      font-size: 1.1rem;
-      color: #FF3333;
-      font-weight: bold;
-    }
+        /* Grille réglée sur 6 colonnes (Lundi -> Vendredi + Week-end) */
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            flex-grow: 1;
+            height: calc(100vh - 220px);
+            overflow: hidden;
+        }
 
-    .jours-wrapper {
-      flex: 1;
-      min-height: 0;
-      margin-bottom: 8px;
-    }
+        /* Colonne d'un jour standard */
+        .day-column {
+            background: #0a0a0a;
+            border-radius: 10px;
+            padding: 10px;
+            border: 2px solid #222;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    .jours {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      height: 100%;
-    }
+        /* Colonne double pour le Week-end (Samedi + Dimanche empilés) */
+        .weekend-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+            overflow: hidden;
+        }
 
-    .jour {
-      background: #0a0a0a;
-      border: 2px solid #00FF66;
-      border-radius: 10px;
-      padding: 8px 4px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
+        .weekend-day {
+            flex: 1;
+            background: #0a0a0a;
+            border-radius: 10px;
+            padding: 8px 10px;
+            border: 2px solid #222;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    .jour.aujourd-hui {
-      border-color: #FF3333;
-      border-width: 3px;
-    }
+        .day-column.is-today, .weekend-day.is-today {
+            border-color: var(--accent-green);
+            background: #0d1a12;
+        }
 
-    .date-jour {
-      font-size: 1rem;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: #00FF66;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #003311;
-      text-align: center;
-      line-height: 1.2;
-      flex-shrink: 0;
-    }
+        .day-header {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent-green);
+            border-bottom: 2px solid #222;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            text-align: center;
+            text-transform: capitalize;
+            flex-shrink: 0;
+        }
 
-    .rdv {
-      margin: 10px 0;
-      padding: 3px;
-    }
+        .day-column.is-today .day-header, .weekend-day.is-today .day-header {
+            color: #00ffff;
+        }
 
-    .rdv-ligne1 {
-      font-size: 0.95rem;
-      color: #FFFFFF;
-      font-weight: bold;
-      line-height: 1.25;
-    }
+        /* Liste des RDV dans la colonne */
+        .rdv-list-day {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
 
-    .heure {
-      color: #FF3333;
-      font-weight: bold;
-    }
+        /* Carte de RDV avec boutons en bas à droite */
+        .rdv-card {
+            background-color: var(--card-bg);
+            border-left: 5px solid var(--accent-green);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: relative;
+        }
 
-    .rdv-ligne2 {
-      font-size: 0.85rem;
-      color: #FFFFFF;
-      margin-top: 2px;
-      opacity: 0.9;
-    }
+        .rdv-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
 
-    .rdv-actions {
-      display: flex;
-      gap: 4px;
-      margin-top: 5px;
-    }
+        /* Ligne 1 : Heure + Titre */
+        .rdv-line-1 {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
 
-    .rdv-actions button {
-      flex: 1;
-      padding: 4px 2px;
-      font-size: 0.75rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+        .rdv-heure {
+            color: var(--accent-green);
+            background: #15291d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            white-space: nowrap;
+        }
 
-    .btn-modif { background: #00AA44; color: #000; }
-    .btn-suppr { background: #FF3333; color: #fff; }
+        /* Ligne 2 : Détails */
+        .rdv-line-2 {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            word-break: break-word;
+            margin-bottom: 20px;
+        }
 
-    .aucun {
-      color: #555;
-      font-style: italic;
-      font-size: 0.9rem;
-      text-align: center;
-      margin-top: 10px;
-    }
+        /* Actions alignées en bas à droite */
+        .rdv-actions {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            display: flex;
+            gap: 4px;
+        }
 
-    .barre-bas {
-      flex-shrink: 0;
-      background: #000;
-      padding: 10px 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      border-top: 2px solid #003311;
-    }
+        .btn-action {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
-    .barre-bas button {
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        .btn-edit {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
 
-    .btn-nav {
-      background: #111;
-      border: 3px solid #00FF66 !important;
-      color: #00FF66;
-      font-size: 1.5rem;
-      height: 50px;
-      flex: 1;
-      max-width: 130px;
-    }
+        .btn-edit:hover {
+            background: var(--accent-blue);
+            color: #000;
+        }
 
-    .btn-ajouter {
-      background: #FF3333;
-      color: #fff;
-      font-size: 2rem;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      box-shadow: 0 4px 12px rgba(255, 50, 50, 0.5);
-      flex-shrink: 0;
-    }
+        .btn-delete {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
 
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 100;
-      padding: 16px;
-      overflow-y: auto;
-    }
-    .modal.actif { display: block; }
+        .btn-delete:hover {
+            background: var(--accent-red);
+            color: #fff;
+        }
 
-    .modal-contenu {
-      max-width: 460px;
-      margin: 20px auto;
-      background: #0a0a0a;
-      border: 3px solid #AAAAAA;
-      border-radius: 18px;
-      padding: 24px;
-    }
+        .no-rdv {
+            font-size: 1rem;
+            color: #444;
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+        }
 
-    .modal h2 {
-      text-align: center;
-      margin-bottom: 24px;
-      font-size: 1.7rem;
-      color: #00FF66;
-    }
+        /* Barre de Navigation Géante en Bas */
+        .nav-footer {
+            height: 70px;
+            flex-shrink: 0;
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
 
-    label {
-      display: block;
-      margin: 16px 0 6px;
-      font-size: 1.25rem;
-      color: #7CFFB2;
-    }
+        .btn-nav-large {
+            flex: 2;
+            height: 100%;
+            background: #15291d;
+            color: var(--accent-green);
+            border: 3px solid var(--accent-green);
+            font-size: 1.8rem;
+            font-weight: 900;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
 
-    input {
-      width: 100%;
-      padding: 14px;
-      font-size: 1.3rem;
-      background: #111;
-      border: 2px solid #AAAAAA;
-      border-radius: 10px;
-      color: #00FF66;
-    }
+        .btn-nav-large:hover {
+            background: var(--accent-green);
+            color: #000;
+        }
 
-    .boutons-modal {
-      display: flex;
-      gap: 14px;
-      margin-top: 30px;
-    }
+        .btn-today {
+            flex: 1;
+            height: 100%;
+            background: #151515;
+            color: #fff;
+            border: 2px solid #444;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+        }
 
-    .boutons-modal button {
-      flex: 1;
-      padding: 16px;
-      font-size: 1.4rem;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+        .btn-today:hover {
+            background: #333;
+        }
 
-    .btn-vert { background: #00CC55; color: #000; }
-    .btn-rouge { background: #FF3333; color: white; }
+        /* Panneau Saisie / Modif Famille Protégé */
+        .admin-section {
+            flex-shrink: 0;
+        }
 
-    #status {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #7CFFB2;
-      margin-top: 4px;
-    }
-  </style>
+        .admin-toggle {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 5px;
+        }
+
+        .form-admin {
+            display: none;
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 700px;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            z-index: 100;
+        }
+
+        .form-admin.active {
+            display: grid;
+        }
+
+        .form-header {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .form-title {
+            color: var(--accent-red);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .btn-close-form {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            color: var(--accent-green);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        input {
+            background: #151515;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            border-radius: 6px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .btn-add {
+            grid-column: span 2;
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="entete">
-    <div class="logo-placeholder" id="logo-zone">
-      <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    <header>
+        <div class="header-left">
+            <div class="logo-container">
+                <img src="ton-logo.png" alt="Logo">
+            </div>
+            <div class="header-title" id="week-title">Semaine...</div>
+        </div>
+    </header>
+
+    <main class="week-grid" id="week-grid">
+        <!-- Généré dynamiquement -->
+    </main>
+
+    <!-- Navigation Géante en Bas -->
+    <div class="nav-footer">
+        <button class="btn-nav-large" onclick="changerSemaine(-1)">
+            ◀ Semaine Précédente
+        </button>
+        <button class="btn-today" onclick="allerAujourdhui()">Aujourd'hui</button>
+        <button class="btn-nav-large" onclick="changerSemaine(1)">
+            Semaine Suivante ▶
+        </button>
     </div>
-    <div class="titres">
-      <h1>Agenda Seniors</h1>
-      <div id="titre-semaine">Semaine</div>
-      <div id="status">Connexion...</div>
+
+    <!-- Saisie Admin Protégée par Mot de Passe -->
+    <div class="admin-section">
+        <button class="admin-toggle" onclick="verifierMotDePasse()">⚙️ + Ajouter un rendez-vous (Famille)</button>
+
+        <form class="form-admin" id="admin-form" onsubmit="sauvegarderRDV(event)">
+            <input type="hidden" id="rdv-id">
+            <div class="form-header">
+                <span class="form-title" id="form-title">Ajouter un rendez-vous</span>
+                <button type="button" class="btn-close-form" onclick="fermerFormulaire()">✕</button>
+            </div>
+            <div class="form-group">
+                <label for="rdv-date">Date :</label>
+                <input type="date" id="rdv-date" required>
+            </div>
+            <div class="form-group">
+                <label for="rdv-heure">Heure (ex: 14h30) :</label>
+                <input type="text" id="rdv-heure" placeholder="14h30" required>
+            </div>
+            <div class="form-group full-width">
+                <label for="rdv-titre">Ligne 1 - Intitulé principal :</label>
+                <input type="text" id="rdv-titre" placeholder="Kiné, Docteur Martin..." required>
+            </div>
+            <div class="form-group full-width">
+                <label for="rdv-detail">Ligne 2 - Détails / Consignes :</label>
+                <input type="text" id="rdv-detail" placeholder="Prendre la carte Vitale...">
+            </div>
+            <button type="submit" class="btn-add" id="btn-submit">Enregistrer</button>
+        </form>
     </div>
-  </div>
 
-  <div class="jours-wrapper">
-    <div class="jours" id="liste-jours"></div>
-  </div>
+    <!-- SDK Firebase Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  <div class="barre-bas">
-    <button class="btn-nav" id="btn-prev">←</button>
-    <button class="btn-ajouter" id="btn-ajouter">+</button>
-    <button class="btn-nav" id="btn-next">→</button>
-  </div>
+        // --- REMPLACE CET OBJET PAR TION PROPRE CONFIGURATION FIREBASE ---
+ const firebaseConfig = {
+    apiKey: "AIzaSyC6Tw3guUVkXFj-rT6y8klAB-CVn6KWCRQ",
+    authDomain: "agenda-seniors-v2.firebaseapp.com",
+    databaseURL: "https://agenda-seniors-v2-default-rtdb.firebaseio.com",
+    projectId: "agenda-seniors-v2",
+    storageBucket: "agenda-seniors-v2.firebasestorage.app",
+    messagingSenderId: "333800206112",
+    appId: "1:333800206112:web:48ec80f92666ec13487145"
+};
 
-  <div class="modal" id="modal">
-    <div class="modal-contenu">
-      <h2 id="modal-titre">Nouveau rendez-vous</h2>
-      <label>Date</label>
-      <input type="date" id="input-date">
-      <label>Heure (ex: 14h30)</label>
-      <input type="text" id="input-heure" placeholder="14h30" maxlength="12">
-      <label>Titre (ligne 1)</label>
-      <input type="text" id="input-titre" placeholder="Qui ?" maxlength="40">
-      <label>Détail (ligne 2)</label>
-      <input type="text" id="input-detail" placeholder="Quoi ?" maxlength="50">
-      <div class="boutons-modal">
-        <button class="btn-rouge" id="btn-annuler">Annuler</button>
-        <button class="btn-vert" id="btn-sauver">Enregistrer</button>
-      </div>
-    </div>
-  </div>
+        // Initialisation de Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const rdvRef = ref(db, 'rendezvous');
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+        const FAMILLE_PASSWORD = '324'; // Ton code PIN famille
+        let dateReference = new Date();
+        let cacheRDVs = [];
 
-<script>
-  // ===== FIREBASE CONFIG =====
-  const firebaseConfig = {
-    apiKey: "AIzaSyBtWwUH2nM91mi_pfFhOnBGHNiP-SjIPJc",
-    authDomain: "agenda-seniors.firebaseapp.com",
-    databaseURL: "https://agenda-seniors-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "agenda-seniors",
-    storageBucket: "agenda-seniors.firebasestorage.app",
-    messagingSenderId: "791269761065",
-    appId: "1:791269761065:web:70635596630ad40ca23c38"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  const rdvsRef = db.ref('rdvs');
-
-  // ===== VARIABLES =====
-  let rdv = [];
-  let dateCourante = new Date();
-  let rdvEnCours = null;
-
-  const moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-
-  function pad(n) { return n < 10 ? '0' + n : n; }
-  function dateToKey(d) {
-    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-  }
-  function formatDateCourte(d) {
-    const j = ['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'][d.getDay()];
-    return j + ' ' + d.getDate();
-  }
-  function getLundi(d) {
-    const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const jour = date.getDay();
-    const diff = (jour === 0) ? -6 : 1 - jour;
-    date.setDate(date.getDate() + diff);
-    return date;
-  }
-
-  // ===== SYNCHRONISATION TEMPS RÉEL =====
-  rdvsRef.on('value', (snapshot) => {
-    const data = snapshot.val();
-    rdv = data ? Object.values(data) : [];
-    document.getElementById('status').textContent = 'Synchronisé';
-    afficherSemaine();
-  });
-
-  function sauvegarder() {
-    // On envoie tout le tableau sous forme d'objet
-    const obj = {};
-    rdv.forEach(r => {
-      obj[r.id] = r;
-    });
-    rdvsRef.set(obj);
-  }
-
-  function afficherSemaine() {
-    const lundi = getLundi(dateCourante);
-    const dimanche = new Date(lundi);
-    dimanche.setDate(lundi.getDate() + 6);
-
-    document.getElementById('titre-semaine').textContent =
-      lundi.getDate() + ' ' + moisFr[lundi.getMonth()] + ' → ' +
-      dimanche.getDate() + ' ' + moisFr[dimanche.getMonth()];
-
-    const conteneur = document.getElementById('liste-jours');
-    conteneur.innerHTML = '';
-
-    const aujourdhuiKey = dateToKey(new Date());
-
-    for (let i = 0; i < 7; i++) {
-      const jour = new Date(lundi);
-      jour.setDate(lundi.getDate() + i);
-      const key = dateToKey(jour);
-
-      const rdvsDuJour = rdv
-        .filter(r => r.date === key)
-        .sort((a, b) => (a.heure || '').localeCompare(b.heure || ''));
-
-      const div = document.createElement('div');
-      div.className = 'jour' + (key === aujourdhuiKey ? ' aujourd-hui' : '');
-
-      let html = '<div class="date-jour">' + formatDateCourte(jour) + '</div>';
-
-      if (rdvsDuJour.length === 0) {
-        html += '<div class="aucun">–</div>';
-      } else {
-        rdvsDuJour.forEach(function(r) {
-          html += `
-            <div class="rdv">
-              <div class="rdv-ligne1">
-                <span class="heure">${r.heure || ''}</span><br>
-                ${r.titre || ''}
-              </div>
-              <div class="rdv-ligne2">${r.detail || ''}</div>
-              <div class="rdv-actions">
-                <button class="btn-modif" onclick="modifierRdv(${r.id})">Modifier</button>
-                <button class="btn-suppr" onclick="supprimerRdv(${r.id})">Supprimer</button>
-              </div>
-            </div>`;
+        // Écoute en temps réel : dès qu'un RDV est ajouté/modifié en ligne, cet écran se rafraîchit seul !
+        onValue(rdvRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cacheRDVs = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+            } else {
+                cacheRDVs = [];
+            }
+            renderSemaine();
         });
-      }
 
-      div.innerHTML = html;
-      conteneur.appendChild(div);
-    }
-  }
+        function getLundi(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+        }
 
-  window.modifierRdv = function(id) {
-    const item = rdv.find(r => r.id === id);
-    if (!item) return;
-    rdvEnCours = item;
-    document.getElementById('modal-titre').textContent = 'Modifier le rendez-vous';
-    document.getElementById('input-date').value = item.date;
-    document.getElementById('input-heure').value = item.heure || '';
-    document.getElementById('input-titre').value = item.titre || '';
-    document.getElementById('input-detail').value = item.detail || '';
-    document.getElementById('modal').classList.add('actif');
-  };
+        function formatISO(d) {
+            return d.toISOString().split('T')[0];
+        }
 
-  window.supprimerRdv = function(id) {
-    if (confirm('Voulez-vous vraiment supprimer ce rendez-vous ?')) {
-      rdv = rdv.filter(r => r.id !== id);
-      sauvegarder();
-    }
-  };
+        window.changerSemaine = function(offset) {
+            dateReference.setDate(dateReference.getDate() + (offset * 7));
+            renderSemaine();
+        };
 
-  document.getElementById('btn-prev').onclick = () => {
-    dateCourante.setDate(dateCourante.getDate() - 7);
-    afficherSemaine();
-  };
+        window.allerAujourdhui = function() {
+            dateReference = new Date();
+            renderSemaine();
+        };
 
-  document.getElementById('btn-next').onclick = () => {
-    dateCourante.setDate(dateCourante.getDate() + 7);
-    afficherSemaine();
-  };
+        window.verifierMotDePasse = function() {
+            const mdp = prompt("Entrez le mot de passe famille :");
+            if (mdp === FAMILLE_PASSWORD) {
+                ouvrirFormulaireAjout();
+            } else if (mdp !== null) {
+                alert("Mot de passe incorrect !");
+            }
+        };
 
-  document.getElementById('btn-ajouter').onclick = () => {
-    rdvEnCours = null;
-    document.getElementById('modal-titre').textContent = 'Nouveau rendez-vous';
-    document.getElementById('input-date').value = dateToKey(new Date());
-    document.getElementById('input-heure').value = '';
-    document.getElementById('input-titre').value = '';
-    document.getElementById('input-detail').value = '';
-    document.getElementById('modal').classList.add('actif');
-  };
+        window.editerRDVProtege = function(id) {
+            const mdp = prompt("Entrez le mot de passe famille pour modifier :");
+            if (mdp === FAMILLE_PASSWORD) {
+                editerRDV(id);
+            } else if (mdp !== null) {
+                alert("Mot de passe incorrect !");
+            }
+        };
 
-  document.getElementById('btn-annuler').onclick = () => {
-    document.getElementById('modal').classList.remove('actif');
-    rdvEnCours = null;
-  };
+        window.supprimerRDVProtege = function(id) {
+            const mdp = prompt("Entrez le mot de passe famille pour supprimer :");
+            if (mdp === FAMILLE_PASSWORD) {
+                supprimerRDV(id);
+            } else if (mdp !== null) {
+                alert("Mot de passe incorrect !");
+            }
+        };
 
-  document.getElementById('btn-sauver').onclick = () => {
-    const date = document.getElementById('input-date').value;
-    const heure = document.getElementById('input-heure').value.trim();
-    const titre = document.getElementById('input-titre').value.trim();
-    const detail = document.getElementById('input-detail').value.trim();
+        function genererHTMLJour(nomJour, jourCourant, rdvsDuJour, isToday) {
+            let html = `
+                <div class="day-header">
+                    ${nomJour} ${jourCourant.getDate()}
+                </div>
+                <div class="rdv-list-day">
+            `;
 
-    if (!date || !titre) {
-      alert('La date et le titre sont obligatoires');
-      return;
-    }
+            if (rdvsDuJour.length === 0) {
+                html += `<div class="no-rdv">-</div>`;
+            } else {
+                rdvsDuJour.forEach(rdv => {
+                    html += `
+                        <div class="rdv-card">
+                            <div class="rdv-info">
+                                <div class="rdv-line-1">
+                                    <span class="rdv-heure">${escapeHtml(rdv.heure)}</span>
+                                    <span>${escapeHtml(rdv.titre)}</span>
+                                </div>
+                                <div class="rdv-line-2">
+                                    ${rdv.detail ? escapeHtml(rdv.detail) : ''}
+                                </div>
+                            </div>
+                            <div class="rdv-actions">
+                                <button class="btn-action btn-edit" onclick="editerRDVProtege('${rdv.id}')">✏️</button>
+                                <button class="btn-action btn-delete" onclick="supprimerRDVProtege('${rdv.id}')">✕</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += `</div>`;
+            return html;
+        }
 
-    if (rdvEnCours) {
-      rdvEnCours.date = date;
-      rdvEnCours.heure = heure;
-      rdvEnCours.titre = titre;
-      rdvEnCours.detail = detail;
-    } else {
-      rdv.push({
-        id: Date.now(),
-        date: date,
-        heure: heure,
-        titre: titre,
-        detail: detail
-      });
-    }
+        function renderSemaine() {
+            const lundi = getLundi(dateReference);
+            const dimanche = new Date(lundi);
+            dimanche.setDate(lundi.getDate() + 6);
 
-    sauvegarder();
-    document.getElementById('modal').classList.remove('actif');
-    rdvEnCours = null;
-  };
+            const optMonth = { day: 'numeric', month: 'short' };
+            const titreSemaine = `Semaine du ${lundi.toLocaleDateString('fr-FR', optMonth)} au ${dimanche.toLocaleDateString('fr-FR', optMonth)} ${dimanche.getFullYear()}`;
+            document.getElementById('week-title').textContent = titreSemaine;
 
-  // Service Worker pour PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(console.log);
-  }
+            const gridContainer = document.getElementById('week-grid');
+            gridContainer.innerHTML = '';
 
-  // Affichage initial
-  afficherSemaine();
-</script>
+            const todayISO = formatISO(new Date());
+            const nomsJours = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
+
+            for (let i = 0; i < 5; i++) {
+                const jourCourant = new Date(lundi);
+                jourCourant.setDate(lundi.getDate() + i);
+                const jourISO = formatISO(jourCourant);
+                const isToday = jourISO === todayISO;
+
+                const rdvsDuJour = cacheRDVs.filter(r => r.date === jourISO);
+                rdvsDuJour.sort((a, b) => a.heure.localeCompare(b.heure));
+
+                const column = document.createElement('div');
+                column.className = `day-column ${isToday ? 'is-today' : ''}`;
+                column.innerHTML = genererHTMLJour(nomsJours[i], jourCourant, rdvsDuJour, isToday);
+                gridContainer.appendChild(column);
+            }
+
+            const weekendCol = document.createElement('div');
+            weekendCol.className = 'weekend-column';
+
+            const samedi = new Date(lundi);
+            samedi.setDate(lundi.getDate() + 5);
+            const samISO = formatISO(samedi);
+            const isSamToday = samISO === todayISO;
+            const rdvsSamedi = cacheRDVs.filter(r => r.date === samISO);
+            rdvsSamedi.sort((a, b) => a.heure.localeCompare(b.heure));
+
+            const samDiv = document.createElement('div');
+            samDiv.className = `weekend-day ${isSamToday ? 'is-today' : ''}`;
+            samDiv.innerHTML = genererHTMLJour('Sam.', samedi, rdvsSamedi, isSamToday);
+
+            const dimISO = formatISO(dimanche);
+            const isDimToday = dimISO === todayISO;
+            const rdvsDimanche = cacheRDVs.filter(r => r.date === dimISO);
+            rdvsDimanche.sort((a, b) => a.heure.localeCompare(b.heure));
+
+            const dimDiv = document.createElement('div');
+            dimDiv.className = `weekend-day ${isDimToday ? 'is-today' : ''}`;
+            dimDiv.innerHTML = genererHTMLJour('Dim.', dimanche, rdvsDimanche, isDimToday);
+
+            weekendCol.appendChild(samDiv);
+            weekendCol.appendChild(dimDiv);
+            gridContainer.appendChild(weekendCol);
+        }
+
+        function ouvrirFormulaireAjout() {
+            document.getElementById('rdv-id').value = '';
+            document.getElementById('form-title').textContent = 'Ajouter un rendez-vous';
+            document.getElementById('btn-submit').textContent = 'Enregistrer';
+            document.getElementById('rdv-heure').value = '';
+            document.getElementById('rdv-titre').value = '';
+            document.getElementById('rdv-detail').value = '';
+            document.getElementById('rdv-date').value = formatISO(new Date());
+            document.getElementById('admin-form').classList.add('active');
+        }
+
+        function editerRDV(id) {
+            const rdv = cacheRDVs.find(r => r.id === id);
+            if (!rdv) return;
+
+            document.getElementById('rdv-id').value = rdv.id;
+            document.getElementById('rdv-date').value = rdv.date;
+            document.getElementById('rdv-heure').value = rdv.heure;
+            document.getElementById('rdv-titre').value = rdv.titre;
+            document.getElementById('rdv-detail').value = rdv.detail || '';
+
+            document.getElementById('form-title').textContent = 'Modifier le rendez-vous';
+            document.getElementById('btn-submit').textContent = 'Mettre à jour';
+            document.getElementById('admin-form').classList.add('active');
+        }
+
+        window.fermerFormulaire = function() {
+            document.getElementById('admin-form').classList.remove('active');
+        };
+
+        window.sauvegarderRDV = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('rdv-id').value || Date.now().toString();
+            const date = document.getElementById('rdv-date').value;
+            const heure = document.getElementById('rdv-heure').value;
+            const titre = document.getElementById('rdv-titre').value;
+            const detail = document.getElementById('rdv-detail').value;
+
+            // Sauvegarde directe sur le cloud Firebase
+            set(ref(db, 'rendezvous/' + id), {
+                date,
+                heure,
+                titre,
+                detail
+            }).then(() => {
+                fermerFormulaire();
+            }).catch(err => {
+                alert("Erreur d'enregistrement Firebase : " + err.message);
+            });
+        };
+
+        function supprimerRDV(id) {
+            if (confirm("Supprimer ce rendez-vous ?")) {
+                remove(ref(db, 'rendezvous/' + id));
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        }
+    </script>
 </body>
 </html>
